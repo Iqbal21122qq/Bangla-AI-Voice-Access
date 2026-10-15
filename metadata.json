@@ -1,0 +1,6 @@
+{
+  "name": "Bangla Voice Access",
+  "description": "Voice Access assistant in Bengali with Gemini high-thinking mode to control phone, play YouTube, take screenshots, share on WhatsApp, and make calls.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

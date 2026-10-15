@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Voice Access বাংলা</string>
+    <string name="voice_access_title">Voice Access (বাংলা AI)</string>
+    <string name="tap_to_speak">বলতে ট্যাপ করুন</string>
+    <string name="listening">শুনছি… বলুন</string>
+    <string name="thinking_ai">Gemini High-Thinking বিশ্লেষণ করছে…</string>
+    <string name="status_ready">প্রস্তুত (Ready)</string>
+</resources>
