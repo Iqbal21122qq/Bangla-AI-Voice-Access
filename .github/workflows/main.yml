@@ -2,28 +2,73 @@ name: Android Build
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "master" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "master" ]
+  workflow_dispatch:
 
 jobs:
   build:
+    name: Build Android APK
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Set up JDK 17
-      uses: actions/setup-java@v4
-      with:
-        java-version: '17'
-        distribution: 'temurin'
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'gradle'
 
-    - name: Setup Gradle
-      uses: gradle/actions/setup-gradle@v3
-      with:
-        gradle-version: '8.10.2' # আগের 8.5 এর জায়গায় নতুন ভার্সন দেওয়া হলো
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
 
-    - name: Build with Gradle
-      run: gradle build # সরাসরি gradle কমান্ড ব্যবহার করা হলো
+      - name: Prepare Keystore & Environment Secrets
+        run: |
+          # Restore debug.keystore from base64
+          if [ -f debug.keystore.base64 ] && [ ! -f debug.keystore ]; then
+            base64 -d debug.keystore.base64 > debug.keystore
+            echo "debug.keystore restored successfully"
+          fi
+
+          # Prepare .env for Secrets Gradle Plugin
+          if [ ! -f .env ]; then
+            cp .env.example .env
+          fi
+
+          # Inject GEMINI_API_KEY if defined in GitHub Repository Secrets
+          if [ -n "${{ secrets.GEMINI_API_KEY }}" ]; then
+            echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" > .env
+          fi
+
+      - name: Setup Gradle (9.3.1)
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.3.1'
+
+      - name: Grant Execute Permission to gradlew
+        run: chmod +x ./gradlew
+
+      - name: Build Debug APK
+        run: ./gradlew :app:assembleDebug --no-daemon --stacktrace
+
+      - name: Locate Generated APK
+        id: find-apk
+        run: |
+          APK_PATH=$(find app/build/outputs/apk/debug -name "*.apk" | head -n 1)
+          if [ -z "$APK_PATH" ]; then
+            echo "Error: APK not found!"
+            exit 1
+          fi
+          echo "Found APK at: $APK_PATH"
+          echo "apk_path=$APK_PATH" >> $GITHUB_OUTPUT
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: VoiceAccess-Bangla-APK
+          path: ${{ steps.find-apk.outputs.apk_path }}
+          retention-days: 14
